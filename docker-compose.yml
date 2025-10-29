@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: taskapi
+      POSTGRES_PASSWORD: taskapi123
+      POSTGRES_DB: taskapi
+    ports:
+      - "5432:5432" # Map container port 5432 to host port 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Persist data across container restarts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskapi"] # Check if DB is ready
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    # We will build this Dockerfile later in Phase 3, but define the service now.
+    # For now, you can run the Go app directly via `go run cmd/api/main.go`
+    # and it will connect to the postgres service.
+    # If you want to use this service directly, you'd need the Dockerfile first.
+    # For testing, we'll primarily interact with 'postgres' from our host machine or integration tests.
+    build: . # Build from the current directory's Dockerfile (we'll create this later)
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgresql://taskapi:taskapi123@postgres:5432/taskapi?sslmode=disable
+      PORT: 8080
+    depends_on:
+      postgres:
+        condition: service_healthy # Ensure postgres is healthy before starting API
+
+volumes:
+  postgres_data: # Define the named volume for persistence
