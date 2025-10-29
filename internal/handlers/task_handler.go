@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv" // For converting string ID from URL to int
 
 	"github.com/cliffdoyle/task-api/internal/models"
+	"github.com/cliffdoyle/task-api/internal/repository"
 	"github.com/cliffdoyle/task-api/internal/service"
 	"github.com/gorilla/mux" // For routing and path variables
 )
@@ -52,11 +54,13 @@ func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 
 	task, err := h.service.GetTask(id)
 	if err != nil {
-		// Distinguish between "not found" and other errors
-		if err.Error() == fmt.Sprintf("task with ID %d not found", id) { // This check relies on the error message from repository.GetByID
-			http.Error(w, err.Error(), http.StatusNotFound)
+		// Distinguish between "not found" and other errors, use errors.Is() to check for the specific wraped error
+		if errors.Is(err,repository.ErrTaskNotFound){
+			http.Error(w, "task not found", http.StatusNotFound)
 			return
 		}
+
+		//All other errors are internal 
 		http.Error(w, fmt.Sprintf("failed to retrieve task: %v", err), http.StatusInternalServerError)
 		return
 	}

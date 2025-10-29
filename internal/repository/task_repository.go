@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/cliffdoyle/task-api/internal/models"
@@ -15,6 +16,8 @@ type TaskRepository interface {
 	Update(task *models.Task) error
 	Delete(id int) error
 }
+
+var ErrTaskNotFound = errors.New("task not found") //export a custom error
 
 // taskRepository is an implementation of TaskRepository that interacts with a SQL database
 type taskRepository struct {
@@ -46,7 +49,7 @@ func (r *taskRepository) GetByID(id int) (*models.Task, error) {
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("task with ID %d not found", id)
+			return nil, ErrTaskNotFound
 		}
 		return nil, err
 	}
